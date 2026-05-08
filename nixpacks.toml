@@ -1,0 +1,5 @@
+[phases.setup]
+cmds = ["pnpm install --no-frozen-lockfile"]
+
+[start]
+cmd = "pnpm start"
