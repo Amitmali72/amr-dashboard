@@ -5,16 +5,8 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 
-const basePath = process.env.BASE_PATH;
-
-if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
-}
-
 export default defineConfig({
-  base: basePath,
+  base: "/",
   plugins: [
     react(),
     tailwindcss(),
@@ -46,7 +38,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port,
+    port : 5173,
     strictPort: true,
     host: "0.0.0.0",
     allowedHosts: true,
@@ -55,7 +47,7 @@ export default defineConfig({
     },
   },
   preview: {
-    port,
+    port : 5173,
     host: "0.0.0.0",
     allowedHosts: true,
   },
