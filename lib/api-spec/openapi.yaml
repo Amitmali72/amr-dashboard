@@ -1,0 +1,378 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Adaptive Modulation Recognition API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: amr
+    description: Adaptive Modulation Recognition operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /amr/predict:
+    post:
+      operationId: predict
+      tags: [amr]
+      summary: Predict modulation type from I/Q signal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PredictRequest"
+      responses:
+        "200":
+          description: Prediction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictResponse"
+
+  /amr/adaptive:
+    post:
+      operationId: getAdaptiveModulation
+      tags: [amr]
+      summary: Get adaptive modulation recommendation based on SNR
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdaptiveRequest"
+      responses:
+        "200":
+          description: Adaptive modulation recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdaptiveResponse"
+
+  /amr/saliency:
+    post:
+      operationId: getSaliency
+      tags: [amr]
+      summary: Get saliency map for explainable AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaliencyRequest"
+      responses:
+        "200":
+          description: Saliency map data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaliencyResponse"
+
+  /amr/generate-signal:
+    post:
+      operationId: generateSignal
+      tags: [amr]
+      summary: Generate a random demo signal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateSignalRequest"
+      responses:
+        "200":
+          description: Generated signal data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateSignalResponse"
+
+  /amr/snr-accuracy:
+    get:
+      operationId: getSnrAccuracy
+      tags: [amr]
+      summary: Get SNR vs accuracy data for chart
+      responses:
+        "200":
+          description: SNR accuracy data points
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SnrAccuracyResponse"
+
+  /amr/confusion-matrix:
+    get:
+      operationId: getConfusionMatrix
+      tags: [amr]
+      summary: Get confusion matrix data
+      responses:
+        "200":
+          description: Confusion matrix
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfusionMatrixResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    PredictRequest:
+      type: object
+      properties:
+        iSamples:
+          type: array
+          items:
+            type: number
+          description: In-phase signal samples (128 values)
+        qSamples:
+          type: array
+          items:
+            type: number
+          description: Quadrature signal samples (128 values)
+        snr:
+          type: number
+          minimum: -20
+          maximum: 20
+          description: Input SNR in dB provided by user or dataset metadata
+        trueModulation:
+          type: string
+          nullable: true
+          description: True modulation type if known (for accuracy indicator)
+      required:
+        - iSamples
+        - qSamples
+        - snr
+
+    PredictResponse:
+      type: object
+      properties:
+        predictedModulation:
+          type: string
+          description: The predicted modulation type
+        confidence:
+          type: number
+          description: Confidence score 0-1
+        snr:
+          type: number
+          description: Input SNR in dB (as provided by user)
+        modelUsed:
+          type: string
+          enum: [high-snr, robust]
+          description: Which model was used for prediction
+        allConfidences:
+          type: object
+          additionalProperties:
+            type: number
+          description: Confidence scores for all modulation types
+        isCorrect:
+          type: boolean
+          nullable: true
+          description: Whether prediction matches true modulation
+      required:
+        - predictedModulation
+        - confidence
+        - snr
+        - modelUsed
+        - allConfidences
+
+    AdaptiveRequest:
+      type: object
+      properties:
+        snr:
+          type: number
+          description: SNR value in dB
+      required:
+        - snr
+
+    AdaptiveResponse:
+      type: object
+      properties:
+        recommendedModulation:
+          type: string
+          description: Recommended modulation for the given SNR
+        explanation:
+          type: string
+          description: Human-readable explanation of the choice
+        direction:
+          type: string
+          enum: [upgrade, downgrade, maintain]
+          description: Whether this is an upgrade or downgrade from baseline
+        bitsPerSymbol:
+          type: number
+          description: Number of bits per symbol for recommended modulation
+        spectralEfficiency:
+          type: number
+          description: Spectral efficiency in bits/s/Hz
+      required:
+        - recommendedModulation
+        - explanation
+        - direction
+        - bitsPerSymbol
+        - spectralEfficiency
+
+    SaliencyRequest:
+      type: object
+      properties:
+        iSamples:
+          type: array
+          items:
+            type: number
+        qSamples:
+          type: array
+          items:
+            type: number
+        modelType:
+          type: string
+          enum: [high-snr, robust]
+          description: Which model to explain
+      required:
+        - iSamples
+        - qSamples
+        - modelType
+
+    SaliencyResponse:
+      type: object
+      properties:
+        iSaliency:
+          type: array
+          items:
+            type: number
+          description: Saliency values for I channel (0-1, higher = more important)
+        qSaliency:
+          type: array
+          items:
+            type: number
+          description: Saliency values for Q channel (0-1, higher = more important)
+        importantRegions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportantRegion"
+          description: Key regions the model focused on
+      required:
+        - iSaliency
+        - qSaliency
+        - importantRegions
+
+    ImportantRegion:
+      type: object
+      properties:
+        start:
+          type: number
+        end:
+          type: number
+        label:
+          type: string
+        importance:
+          type: number
+      required:
+        - start
+        - end
+        - label
+        - importance
+
+    GenerateSignalRequest:
+      type: object
+      properties:
+        modulation:
+          type: string
+          nullable: true
+          description: Specific modulation to generate, or null for random
+        snr:
+          type: number
+          nullable: true
+          description: Specific SNR in dB, or null for random
+      required: []
+
+    GenerateSignalResponse:
+      type: object
+      properties:
+        iSamples:
+          type: array
+          items:
+            type: number
+        qSamples:
+          type: array
+          items:
+            type: number
+        modulation:
+          type: string
+          description: The modulation type used
+        snr:
+          type: number
+          description: The SNR used in dB
+      required:
+        - iSamples
+        - qSamples
+        - modulation
+        - snr
+
+    SnrAccuracyResponse:
+      type: object
+      properties:
+        dataPoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/SnrAccuracyPoint"
+        modelHighSnr:
+          type: array
+          items:
+            $ref: "#/components/schemas/SnrAccuracyPoint"
+        modelRobust:
+          type: array
+          items:
+            $ref: "#/components/schemas/SnrAccuracyPoint"
+      required:
+        - dataPoints
+        - modelHighSnr
+        - modelRobust
+
+    SnrAccuracyPoint:
+      type: object
+      properties:
+        snr:
+          type: number
+        accuracy:
+          type: number
+      required:
+        - snr
+        - accuracy
+
+    ConfusionMatrixResponse:
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        matrix:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+      required:
+        - labels
+        - matrix
