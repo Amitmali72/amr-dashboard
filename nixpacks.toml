@@ -1,5 +1,11 @@
 [phases.setup]
+nixPkgs = ["nodejs", "pnpm"]
+
+[phases.install]
 cmds = ["pnpm install --ignore-scripts"]
+
+[phases.build]
+cmds = ["pnpm build"]
 
 [start]
 cmd = "pnpm start"
