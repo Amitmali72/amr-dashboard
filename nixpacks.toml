@@ -1,5 +1,5 @@
 [phases.setup]
-cmds = ["pnpm install --no-frozen-lockfile"]
+cmds = ["pnpm install --no-frozen-lockfile --ignore-scripts"]
 
 [start]
 cmd = "pnpm start"
